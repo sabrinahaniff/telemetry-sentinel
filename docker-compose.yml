@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # Fake rocket telemetry stream
+  simulator:
+    image: node:24
+    working_dir: /app/simulator
+    volumes:
+      - .:/app
+    command: node mock-telemetry.js
+    ports:
+      - "8081:8081"
+
+  # Security detection backend
+  backend:
+    image: node:24
+    working_dir: /app/backend
+    volumes:
+      - .:/app
+    command: sh -c "npm install && node src/server.js"
+    ports:
+      - "8082:8082"
+    depends_on:
+      - simulator
+
+  # OpenMCT dashboard
+  openmct:
+    image: node:24
+    working_dir: /app/openmct
+    volumes:
+      - .:/app
+    command: sh -c "npm install && npm start"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
