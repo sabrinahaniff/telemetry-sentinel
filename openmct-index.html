@@ -1,0 +1,255 @@
+<!--
+ Open MCT, Copyright (c) 2014-2024, United States Government
+ as represented by the Administrator of the National Aeronautics and Space
+ Administration. All rights reserved.
+
+ Open MCT is licensed under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ http://www.apache.org/licenses/LICENSE-2.0.
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ License for the specific language governing permissions and limitations
+ under the License.
+
+ Open MCT includes source code licensed under additional open source
+ licenses. See the Open Source Licenses file (LICENSES.md) included with
+ this source code distribution or the Licensing information page available
+ at runtime from the About dialog for additional information.
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Open MCT</title>
+    <script src="dist/openmct.js"></script>
+    <link rel="icon" type="image/png" href="dist/favicons/favicon-96x96.png" sizes="96x96" type="image/x-icon" />
+    <link rel="icon" type="image/png" href="dist/favicons/favicon-32x32.png" sizes="32x32" type="image/x-icon" />
+    <link rel="icon" type="image/png" href="dist/favicons/favicon-16x16.png" sizes="16x16" type="image/x-icon" />
+    <style>
+      @keyframes splash-spinner {
+        0% { transform: translate(-50%, -50%) rotate(0deg); }
+        100% { transform: translate(-50%, -50%) rotate(360deg); }
+      }
+      #splash-screen {
+        background-color: black;
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        z-index: 10000;
+      }
+      #splash-screen:before {
+        animation-name: splash-spinner;
+        animation-duration: 0.5s;
+        animation-iteration-count: infinite;
+        animation-timing-function: linear;
+        border-radius: 50%;
+        border-color: rgba(255, 255, 255, 0.25);
+        border-top-color: white;
+        border-style: solid;
+        border-width: 10px;
+        content: '';
+        display: block;
+        opacity: 0.25;
+        position: absolute;
+        left: 50%; top: 50%;
+        height: 100px; width: 100px;
+      }
+    </style>
+    <script defer>
+      const THIRTY_SECONDS = 30 * 1000;
+      const ONE_MINUTE = THIRTY_SECONDS * 2;
+      const FIVE_MINUTES = ONE_MINUTE * 5;
+      const FIFTEEN_MINUTES = FIVE_MINUTES * 3;
+      const THIRTY_MINUTES = FIFTEEN_MINUTES * 2;
+      const ONE_HOUR = THIRTY_MINUTES * 2;
+      const TWO_HOURS = ONE_HOUR * 2;
+      const ONE_DAY = ONE_HOUR * 24;
+
+      openmct.install(openmct.plugins.LocalStorage());
+      openmct.install(openmct.plugins.example.Generator());
+      openmct.install(openmct.plugins.example.EventGeneratorPlugin());
+      openmct.install(openmct.plugins.example.ExampleImagery());
+      openmct.install(openmct.plugins.example.ExampleTags());
+      openmct.install(openmct.plugins.Espresso());
+      openmct.install(openmct.plugins.MyItems());
+      openmct.install(openmct.plugins.PlanLayout({ creatable: true }));
+      const timeLinePlugin = openmct.plugins.Timeline();
+      openmct.install(timeLinePlugin);
+      openmct.install(openmct.plugins.Hyperlink());
+      openmct.install(openmct.plugins.UTCTimeSystem());
+      openmct.install(openmct.plugins.AutoflowView({ type: 'telemetry.panel' }));
+      openmct.install(openmct.plugins.DisplayLayout({ showAsView: ['summary-widget', 'example.imagery'] }));
+      openmct.install(openmct.plugins.Conductor({
+        menuOptions: [
+          {
+            name: 'Fixed',
+            timeSystem: 'utc',
+            bounds: { start: Date.now() - THIRTY_MINUTES, end: Date.now() },
+            presets: [
+              { label: 'Last Day', bounds: { start: () => Date.now() - ONE_DAY, end: () => Date.now() } },
+              { label: 'Last 2 hours', bounds: { start: () => Date.now() - TWO_HOURS, end: () => Date.now() } },
+              { label: 'Last hour', bounds: { start: () => Date.now() - ONE_HOUR, end: () => Date.now() } }
+            ],
+            records: 10
+          },
+          {
+            name: 'Realtime',
+            timeSystem: 'utc',
+            clock: 'local',
+            clockOffsets: { start: -THIRTY_MINUTES, end: THIRTY_SECONDS },
+            presets: [
+              { label: '1 Hour', bounds: { start: -ONE_HOUR, end: THIRTY_SECONDS } },
+              { label: '30 Minutes', bounds: { start: -THIRTY_MINUTES, end: THIRTY_SECONDS } },
+              { label: '15 Minutes', bounds: { start: -FIFTEEN_MINUTES, end: THIRTY_SECONDS } },
+              { label: '5 Minutes', bounds: { start: -FIVE_MINUTES, end: THIRTY_SECONDS } },
+              { label: '1 Minute', bounds: { start: -ONE_MINUTE, end: THIRTY_SECONDS } }
+            ]
+          }
+        ]
+      }));
+      openmct.install(openmct.plugins.SummaryWidget());
+      openmct.install(openmct.plugins.Notebook());
+      openmct.install(openmct.plugins.LADTable());
+      openmct.install(openmct.plugins.Filters(['table', 'telemetry.plot.overlay']));
+      openmct.install(openmct.plugins.ObjectMigration());
+      openmct.install(openmct.plugins.ClearData(
+        ['table', 'telemetry.plot.overlay', 'telemetry.plot.stacked', 'example.imagery'],
+        { indicator: true }
+      ));
+      openmct.install(openmct.plugins.Clock({ enableClockIndicator: true }));
+      openmct.install(openmct.plugins.Timer());
+      openmct.install(openmct.plugins.Timelist());
+      openmct.install(openmct.plugins.BarChart());
+      openmct.install(openmct.plugins.ScatterPlot());
+      openmct.install(openmct.plugins.EventTimestripPlugin(timeLinePlugin.extendedLinesBus));
+
+      document.addEventListener('DOMContentLoaded', function () {
+        openmct.install(TelemetrySecurityPlugin());
+        openmct.start();
+      });
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script>
+    function TelemetrySecurityPlugin() {
+      return function install(openmct) {
+        var ALERT_SERVER = 'ws://localhost:8082';
+        var COLORS = { CRITICAL: '#e74c3c', HIGH: '#e67e22', MEDIUM: '#f1c40f', LOW: '#3498db' };
+
+        openmct.types.addType('security-alerts', {
+          name: 'Security Alert Panel',
+          description: 'Live telemetry anomaly and security alerts',
+          cssClass: 'icon-object',
+          creatable: true,
+          initialize: function(object) { object.composition = []; }
+        });
+
+        openmct.objectViews.addProvider({
+          name: 'Security Alert Panel',
+          key: 'security-alert-panel',
+          cssClass: 'icon-object',
+          canView: function(d) { return d.type === 'security-alerts'; },
+          view: function(domainObject) {
+            var ws;
+            var allAlerts = [];
+            var currentFilter = 'ALL';
+
+            function updateStats() {
+              var t = document.getElementById('stat-total');
+              var c = document.getElementById('stat-critical');
+              var h = document.getElementById('stat-high');
+              var m = document.getElementById('stat-medium');
+              if (t) t.textContent = 'Total: ' + allAlerts.length;
+              if (c) c.textContent = 'CRITICAL: ' + allAlerts.filter(function(a) { return a.severity === 'CRITICAL'; }).length;
+              if (h) h.textContent = 'HIGH: ' + allAlerts.filter(function(a) { return a.severity === 'HIGH'; }).length;
+              if (m) m.textContent = 'MEDIUM: ' + allAlerts.filter(function(a) { return a.severity === 'MEDIUM'; }).length;
+            }
+
+            function renderFeed() {
+              var feed = document.getElementById('feed');
+              if (!feed) return;
+              var filtered = currentFilter === 'ALL' ? allAlerts : allAlerts.filter(function(a) { return a.severity === currentFilter; });
+              if (!filtered.length) { feed.innerHTML = '<div style="color:#555;">No alerts for this filter.</div>'; return; }
+              feed.innerHTML = '';
+              filtered.slice().reverse().forEach(function(a) {
+                var color = COLORS[a.severity] || '#aaa';
+                var card = document.createElement('div');
+                card.style.cssText = 'border-left:3px solid ' + color + ';background:#111;padding:8px 12px;border-radius:4px;margin-bottom:6px;';
+                card.innerHTML = '<div style="color:' + color + ';font-weight:bold;font-size:12px;">[' + a.severity + '] ' + a.category + '</div>'
+                  + '<div style="font-size:12px;color:#ccc;margin-top:4px;">' + a.message + '</div>';
+                feed.appendChild(card);
+              });
+            }
+
+            window.setFilter = function(f) {
+              currentFilter = f;
+              document.querySelectorAll('[id^="f-"]').forEach(function(b) { b.style.background = '#1a1a1a'; });
+              var btn = document.getElementById('f-' + f);
+              if (btn) btn.style.background = '#333';
+              renderFeed();
+            };
+
+            window.clearAlerts = function() {
+              allAlerts = [];
+              updateStats();
+              renderFeed();
+            };
+
+            return {
+              show: function(element) {
+                element.innerHTML = ''
+                  + '<div id="sentinel" style="font-family:monospace;background:#0a0a0a;color:#e0e0e0;height:100%;overflow-y:auto;padding:12px;box-sizing:border-box;">'
+                  + '<div style="font-weight:bold;margin-bottom:12px;color:#aaa;font-size:14px;">TELEMETRY SENTINEL</div>'
+                  + '<div id="stats" style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">'
+                  + '<div id="stat-total" style="background:#1a1a1a;padding:6px 12px;border-radius:4px;font-size:12px;">Total: 0</div>'
+                  + '<div id="stat-critical" style="background:#1a1a1a;border-left:3px solid #e74c3c;padding:6px 12px;border-radius:4px;font-size:12px;">CRITICAL: 0</div>'
+                  + '<div id="stat-high" style="background:#1a1a1a;border-left:3px solid #e67e22;padding:6px 12px;border-radius:4px;font-size:12px;">HIGH: 0</div>'
+                  + '<div id="stat-medium" style="background:#1a1a1a;border-left:3px solid #f1c40f;padding:6px 12px;border-radius:4px;font-size:12px;">MEDIUM: 0</div>'
+                  + '</div>'
+                  + '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">'
+                  + '<button onclick="setFilter(\'ALL\')" id="f-ALL" style="background:#333;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;">All</button>'
+                  + '<button onclick="setFilter(\'CRITICAL\')" id="f-CRITICAL" style="background:#1a1a1a;color:#e74c3c;border:1px solid #e74c3c;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;">Critical</button>'
+                  + '<button onclick="setFilter(\'HIGH\')" id="f-HIGH" style="background:#1a1a1a;color:#e67e22;border:1px solid #e67e22;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;">High</button>'
+                  + '<button onclick="setFilter(\'MEDIUM\')" id="f-MEDIUM" style="background:#1a1a1a;color:#f1c40f;border:1px solid #f1c40f;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;">Medium</button>'
+                  + '<button onclick="clearAlerts()" style="background:#1a1a1a;color:#aaa;border:1px solid #444;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:auto;">Clear</button>'
+                  + '</div>'
+                  + '<div id="feed" style="display:flex;flex-direction:column;gap:8px;"><div style="color:#555;">Connecting...</div></div>'
+                  + '</div>';
+
+                ws = new WebSocket(ALERT_SERVER);
+                ws.onopen = function() {
+                  var feed = document.getElementById('feed');
+                  if (feed) feed.innerHTML = '<div style="color:#555;">Monitoring active...</div>';
+                };
+                ws.onmessage = function(e) {
+                  var msg = JSON.parse(e.data);
+                  var incoming = (msg.type === 'alerts' || msg.type === 'history') ? msg.alerts : [];
+                  allAlerts = allAlerts.concat(incoming);
+                  updateStats();
+                  renderFeed();
+                };
+                ws.onclose = function() {
+                  var feed = document.getElementById('feed');
+                  if (feed) {
+                    var d = document.createElement('div');
+                    d.style.color = '#e74c3c';
+                    d.textContent = 'Alert server disconnected.';
+                    feed.appendChild(d);
+                  }
+                };
+              },
+              destroy: function() { if (ws) ws.close(); }
+            };
+          }
+        });
+      };
+    }
+    </script>
+  </body>
+</html>
