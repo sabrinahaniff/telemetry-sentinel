@@ -2,7 +2,8 @@
 
 An OpenMCT plugin that adds a real-time security monitoring layer for [NASA's OpenMCT](https://github.com/nasa/openmct) mission control software. Detects aerospace anomalies and web security attacks in live rocket telemetry data displayed as live alerts directly inside the mission control dashboard.
 
-![Telemetry Sentinel in action](./docs/screenshot.png)
+<img width="1392" height="775" alt="image" src="https://github.com/user-attachments/assets/2714de8c-0768-42e4-ab08-faf4a8e5e3a3" />
+
 
 ---
 
