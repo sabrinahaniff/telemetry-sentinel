@@ -161,10 +161,10 @@
             var currentFilter = 'ALL';
 
             function updateStats() {
-              var t = document.getElementById('stat-total');
-              var c = document.getElementById('stat-critical');
-              var h = document.getElementById('stat-high');
-              var m = document.getElementById('stat-medium');
+              var t = document.getElementById('sentinel-total');
+              var c = document.getElementById('sentinel-critical');
+              var h = document.getElementById('sentinel-high');
+              var m = document.getElementById('sentinel-medium');
               if (t) t.textContent = 'Total: ' + allAlerts.length;
               if (c) c.textContent = 'CRITICAL: ' + allAlerts.filter(function(a) { return a.severity === 'CRITICAL'; }).length;
               if (h) h.textContent = 'HIGH: ' + allAlerts.filter(function(a) { return a.severity === 'HIGH'; }).length;
@@ -172,16 +172,20 @@
             }
 
             function renderFeed() {
-              var feed = document.getElementById('feed');
+              var feed = document.getElementById('sentinel-feed');
               if (!feed) return;
               var filtered = currentFilter === 'ALL' ? allAlerts : allAlerts.filter(function(a) { return a.severity === currentFilter; });
               if (!filtered.length) { feed.innerHTML = '<div style="color:#555;">No alerts for this filter.</div>'; return; }
               feed.innerHTML = '';
               filtered.slice().reverse().forEach(function(a) {
                 var color = COLORS[a.severity] || '#aaa';
+                var time = a.timestamp ? new Date(a.timestamp).toLocaleTimeString() : '';
                 var card = document.createElement('div');
                 card.style.cssText = 'border-left:3px solid ' + color + ';background:#111;padding:8px 12px;border-radius:4px;margin-bottom:6px;';
-                card.innerHTML = '<div style="color:' + color + ';font-weight:bold;font-size:12px;">[' + a.severity + '] ' + a.category + '</div>'
+                card.innerHTML = '<div style="display:flex;justify-content:space-between;">'
+                  + '<span style="color:' + color + ';font-weight:bold;font-size:12px;">[' + a.severity + '] ' + a.category + '</span>'
+                  + '<span style="color:#555;font-size:11px;">' + time + '</span>'
+                  + '</div>'
                   + '<div style="font-size:12px;color:#ccc;margin-top:4px;">' + a.message + '</div>';
                 feed.appendChild(card);
               });
@@ -206,11 +210,11 @@
                 element.innerHTML = ''
                   + '<div id="sentinel" style="font-family:monospace;background:#0a0a0a;color:#e0e0e0;height:100%;overflow-y:auto;padding:12px;box-sizing:border-box;">'
                   + '<div style="font-weight:bold;margin-bottom:12px;color:#aaa;font-size:14px;">TELEMETRY SENTINEL</div>'
-                  + '<div id="stats" style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">'
-                  + '<div id="stat-total" style="background:#1a1a1a;padding:6px 12px;border-radius:4px;font-size:12px;">Total: 0</div>'
-                  + '<div id="stat-critical" style="background:#1a1a1a;border-left:3px solid #e74c3c;padding:6px 12px;border-radius:4px;font-size:12px;">CRITICAL: 0</div>'
-                  + '<div id="stat-high" style="background:#1a1a1a;border-left:3px solid #e67e22;padding:6px 12px;border-radius:4px;font-size:12px;">HIGH: 0</div>'
-                  + '<div id="stat-medium" style="background:#1a1a1a;border-left:3px solid #f1c40f;padding:6px 12px;border-radius:4px;font-size:12px;">MEDIUM: 0</div>'
+                  + '<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">'
+                  + '<div id="sentinel-total" style="background:#1a1a1a;padding:6px 12px;border-radius:4px;font-size:12px;">Total: 0</div>'
+                  + '<div id="sentinel-critical" style="background:#1a1a1a;border-left:3px solid #e74c3c;padding:6px 12px;border-radius:4px;font-size:12px;">CRITICAL: 0</div>'
+                  + '<div id="sentinel-high" style="background:#1a1a1a;border-left:3px solid #e67e22;padding:6px 12px;border-radius:4px;font-size:12px;">HIGH: 0</div>'
+                  + '<div id="sentinel-medium" style="background:#1a1a1a;border-left:3px solid #f1c40f;padding:6px 12px;border-radius:4px;font-size:12px;">MEDIUM: 0</div>'
                   + '</div>'
                   + '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">'
                   + '<button onclick="setFilter(\'ALL\')" id="f-ALL" style="background:#333;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;">All</button>'
@@ -219,12 +223,12 @@
                   + '<button onclick="setFilter(\'MEDIUM\')" id="f-MEDIUM" style="background:#1a1a1a;color:#f1c40f;border:1px solid #f1c40f;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;">Medium</button>'
                   + '<button onclick="clearAlerts()" style="background:#1a1a1a;color:#aaa;border:1px solid #444;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;margin-left:auto;">Clear</button>'
                   + '</div>'
-                  + '<div id="feed" style="display:flex;flex-direction:column;gap:8px;"><div style="color:#555;">Connecting...</div></div>'
+                  + '<div id="sentinel-feed" style="display:flex;flex-direction:column;gap:8px;"><div style="color:#555;">Connecting...</div></div>'
                   + '</div>';
 
                 ws = new WebSocket(ALERT_SERVER);
                 ws.onopen = function() {
-                  var feed = document.getElementById('feed');
+                  var feed = document.getElementById('sentinel-feed');
                   if (feed) feed.innerHTML = '<div style="color:#555;">Monitoring active...</div>';
                 };
                 ws.onmessage = function(e) {
@@ -235,7 +239,7 @@
                   renderFeed();
                 };
                 ws.onclose = function() {
-                  var feed = document.getElementById('feed');
+                  var feed = document.getElementById('sentinel-feed');
                   if (feed) {
                     var d = document.createElement('div');
                     d.style.color = '#e74c3c';
